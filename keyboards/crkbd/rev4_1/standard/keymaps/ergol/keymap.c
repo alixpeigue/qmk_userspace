@@ -29,7 +29,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_LSFT,    KF_W,    KF_X, KF_QUES,    KF_V,    KF_B,                      KF_COLN,    KF_H,    KF_G, KF_SCLN,    KF_K, KC_RSFT,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LALT, KC_LCTL, KC_LGUI,    MO(NAV),  KC_SPC, MO(SYM)
+                                                                                      KC_LALT, KC_LCTL, KC_LGUI,    NAV_KEY,  KC_SPC, MO(SYM)
                                       //`--------------------------'  `--------------------------'
 
   ),
@@ -54,7 +54,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       QK_BOOT, XXXXXXX, KC_VOLD, KC_MUTE, KC_VOLU, XXXXXXX,                      KF_COMM,    KF_1,    KF_2,    KF_3,  KF_DOT, _______,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          _______, _______,  MO(WM),    _______, _______, _______
+                                                                                      _______, _______,  WM_KEY,    _______, _______, _______
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -82,6 +82,44 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                       //`--------------------------'  `--------------------------'
   )
 };
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    static bool nav_key_active = false;
+    static bool wm_key_active = false;
+
+    switch (keycode) {
+        case NAV_KEY:
+            if (record->event.pressed) {
+                nav_key_active = true;
+            } else {
+                nav_key_active = false;
+            }
+            break;
+        case WM_KEY:
+            if (record->event.pressed) {
+                wm_key_active = true;
+            } else {
+                wm_key_active = false;
+            }
+            break;
+        default:
+            return true; // Process other keycodes normally
+    }
+
+    // Layer management logic
+    if (nav_key_active && wm_key_active) {
+        layer_on(WM); // Use WM directly from enum Layers
+        layer_off(NAV); // Use NAV directly from enum Layers
+    } else if (nav_key_active) {
+        layer_on(NAV); // Use NAV directly from enum Layers
+        layer_off(WM); // Ensure WM is off if only NAV is on
+    } else {
+        layer_off(NAV);
+        layer_off(WM);
+    }
+
+    return false; // Consume NAV_KEY and WM_KEY
+}
 
 #ifdef ENCODER_MAP_ENABLE
 const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
