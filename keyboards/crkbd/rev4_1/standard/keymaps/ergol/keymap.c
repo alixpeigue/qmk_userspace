@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "keymap_us.h"
 #define AZERTY
 
 #include "keymap.h"
@@ -29,7 +30,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       KC_LSFT,    KF_W,    KF_X, KF_QUES,    KF_V,    KF_B,                      KF_COLN,    KF_H,    KF_G, KF_SCLN,    KF_K, KC_RSFT,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                                                                      KC_LALT, KC_LCTL, KC_LGUI,    NAV_KEY,  KC_SPC, MO(SYM)
+                                          KC_LALT, KC_LCTL, KC_LGUI,    MO(NAV),  KC_SPC, MO(SYM)
                                       //`--------------------------'  `--------------------------'
 
   ),
@@ -54,7 +55,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       QK_BOOT, XXXXXXX, KC_VOLD, KC_MUTE, KC_VOLU, XXXXXXX,                      KF_COMM,    KF_1,    KF_2,    KF_3,  KF_DOT, _______,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                                                                      _______, _______,  WM_KEY,    _______, _______, _______
+                                          _______, _______, _______,    _______, _______, _______
                                       //`--------------------------'  `--------------------------'
   ),
 
@@ -64,7 +65,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       _______, KF_AGRV, KF_EACU, KF_EGRV, KF_ECRC, KF_NTLD,                      KF_LPRN, KF_RPRN, KF_ICRC, KF_IDIA, KF_UGRV, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      RM_NEXT, RM_HUED, RM_SATD, RM_VALD, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+      _______, RM_HUED, RM_SATD, RM_VALD, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
                                           KC_LGUI, _______,  KC_SPC,     KC_ENT, _______, KC_RALT
                                       //`--------------------------'  `--------------------------'
@@ -83,42 +84,55 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )
 };
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    static bool nav_key_active = false;
-    static bool wm_key_active = false;
+bool nav_held = false;
+bool lgui_held = false;
 
-    switch (keycode) {
-        case NAV_KEY:
-            if (record->event.pressed) {
-                nav_key_active = true;
-            } else {
-                nav_key_active = false;
-            }
-            break;
-        case WM_KEY:
-            if (record->event.pressed) {
-                wm_key_active = true;
-            } else {
-                wm_key_active = false;
-            }
-            break;
-        default:
-            return true; // Process other keycodes normally
-    }
+bool is_spc_active(void) {
+    return layer_state_is(SPC) || layer_state_cmp(layer_state, SPC);
+}
 
-    // Layer management logic
-    if (nav_key_active && wm_key_active) {
-        layer_on(WM); // Use WM directly from enum Layers
-        layer_off(NAV); // Use NAV directly from enum Layers
-    } else if (nav_key_active) {
-        layer_on(NAV); // Use NAV directly from enum Layers
-        layer_off(WM); // Ensure WM is off if only NAV is on
+layer_state_t layer_state_set_user(layer_state_t state) {
+    if (nav_held && lgui_held) {
+        state |= (1UL << WM);
     } else {
-        layer_off(NAV);
-        layer_off(WM);
+        state &= ~(1UL << WM);
+    }
+    return state;
+}
+
+bool left_shift = false;
+bool right_shift = false;
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+
+    // --- Track Shift keys ---
+    if (keycode == KC_LSFT) {
+        left_shift = record->event.pressed;
+    } else if (keycode == KC_RSFT) {
+        right_shift = record->event.pressed;
     }
 
-    return false; // Consume NAV_KEY and WM_KEY
+    if (keycode == KC_LSFT) left_shift = record->event.pressed;
+    if (keycode == KC_RSFT) right_shift = record->event.pressed;
+    bool shift_active = left_shift || right_shift;
+
+
+    // --- Precomposed accented letters ---
+    switch (keycode) {
+        case KF_ACRC:  // â / Â
+            if (record->event.pressed) {
+                if (shift_active) {
+                    register_code(KC_LSFT);
+                    tap_code(KC_A);
+                    unregister_code(KC_LSFT);
+                } else {
+                    tap_code(KC_A);
+                }
+            }
+            return false;
+    }
+
+    return true;
 }
 
 #ifdef ENCODER_MAP_ENABLE

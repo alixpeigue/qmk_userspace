@@ -23,8 +23,6 @@ enum keycodes {
     SW_TAB,
     SW_GRV,
     KC_HSCL,
-    NAV_KEY, // Custom keycode for NAV layer activation
-    WM_KEY,  // Custom keycode for WM layer activation
 #ifdef AZERTY
     KF_ACRC,
     KF_ECRC,
