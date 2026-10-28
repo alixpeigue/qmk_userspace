@@ -124,13 +124,14 @@ its base character.
 Hold the right middle thumb key (`Num`).
 
 ```
-  1    2    3    4    5    6          7    8    9    0    -    =
+  =    1    2    3    4    5          6    7    8    9    0    -
  F1   F2   F3   F4   F5   F6         ←    ↓    ↑    →   Home  End
  F7   F8   F9  F10  F11  F12        PgUp PgDn  Ins  Del  Vol- Vol+
                                              Play/Pause
 ```
 
-The digits stay digits even when `Shift` is held.  The bootloader and RGB
+The digits sit under the letter columns (1–5 on `Q…W`, 6–0 on `J…Y`), and
+stay digits even when `Shift` is held.  The bootloader and RGB
 controls live in the `MGT` layer.
 
 ## Dead keys
